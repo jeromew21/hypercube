@@ -1,36 +1,84 @@
+import pygame
+import itertools
+
 def flip(bit):
     return 1 if bit == 0 else 0
 
-class Hypercube:
-    def __init__(self, n):
-        self.nodes = []
+class HypercubeGenerator:
+    def __init__(self, i_x=50, i_y=300):
         self._hash = {}
-        if n == 1:
-            self.nodes = [Node([0], self), Node([1], self)]
-        else:
-            cube1 = Hypercube(n - 1)
-            cube2 = Hypercube(n - 1)
-            cube1.pad_all(0)
-            cube2.pad_all(1)
-            self.nodes = cube1.nodes + cube2.nodes
+        self.n = 1
+        
+        self.nodes = [Node([0], self, i_x, i_y), Node([1], self, i_x, i_y + 250)]
+        
         for node in self.nodes:
             node.hypercube = self
             self._hash[node.string_rep] = node
     
+    def split(self):
+        self._hash = {}
+        copies = [node.copy().pad(1) for node in self.nodes]
+        self.nodes = [node.pad(0) for node in self.nodes]
+        dx = 1
+        dy = 0
+        if self.n == 2:
+            dy = -0.7
+            dx = 0.5
+        if self.n == 3:
+            dx = 0.8
+            dy = -0.4
+        for node in self.nodes:
+            node.set_velo(0, 0)
+            self._hash[node.string_rep] = node
+        for node in copies:
+            node.set_velo(dx, dy)
+            self._hash[node.string_rep] = node
+        self.nodes.extend(copies)
+        self.n += 1
+    
     def get_node_by_hash(self, h):
         if h not in self._hash:
             print(f"Invalid hash '{h}'")
+            print(self._hash)
             raise Exception()
         return self._hash[h]
-
-    def pad_all(self, bit):
-        for node in self.nodes:
-            node.pad(bit)
+    
+    def __repr__(self):
+        return f"Hypercube<{self.n}>"
     
 class Node:
-    def __init__(self, binary, hypercube):
+    count = 0
+    registry = []
+
+    def __init__(self, binary, hypercube, x, y):
+        Node.count += 1
+        Node.registry.append(self)
         self.binary = binary
         self.hypercube = hypercube
+        self._x = x
+        self._y = y
+        self.dx = 0
+        self.dy = 0
+        self.moving = False
+    
+    @property
+    def x(self):
+        return int(self._x)
+    
+    @property
+    def y(self):
+        return int(self._y)
+
+    def step(self):
+        self._x += self.dx
+        self._y += self.dy
+
+    def set_velo(self, x, y):
+        self.dx = x
+        self.dy = y
+
+    def copy(self):
+        return Node([k for k in self.binary], self.hypercube, self._x, self._y)
 
     @property
     def string_rep(self):   
@@ -38,6 +86,7 @@ class Node:
     
     def pad(self, bit):
         self.binary.insert(0, bit)
+        return self
 
     def calc_neighbors(self):
         def yield_them():
@@ -49,4 +98,57 @@ class Node:
         return list(yield_them())
     
     def __repr__(self):
-        return f"Node<{self.string_rep}>"
+        return f"Node<{self.string_rep}, ({self.x}, {self.y})>"
+
+pygame.init()
+clock = pygame.time.Clock()
+
+pygame.display.set_caption("hypercube, nice")
+
+screen = pygame.display.set_mode(
+    (800, 600))
+pygame.display.update()
+
+h = HypercubeGenerator()
+ticks = 0
+
+white = (255, 255, 255)
+black = (0, 0, 0)
+
+translate_steps = 250
+current_step = 0
+
+print(f"Num nodes: {Node.count}")
+
+h.split()
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            break
+    screen.fill(white)
+    
+    for node in h.nodes:
+        node.step()
+        pygame.draw.circle(screen, black, (node.x, node.y), 3)
+    for node in h.nodes:
+        for nb in node.calc_neighbors():
+            pygame.draw.lines(screen, black, False, [
+                (node.x, node.y),
+                (nb.x, nb.y)
+            ], 1)
+
+    current_step += 1
+    if current_step >= translate_steps:
+        if h.n <= 3:
+            h.split()
+        else:
+            for node in h.nodes:
+                node.set_velo(0, 0)
+        current_step = 0
+    
+
+    ticks += 1
+    pygame.display.update()
+    clock.tick(60)
