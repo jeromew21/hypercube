@@ -1,4 +1,5 @@
 import pygame
+from pygame import gfxdraw
 import itertools
 
 def flip(bit):
@@ -120,7 +121,7 @@ current_step = 0
 
 print(f"Num nodes: {Node.count}")
 
-h.split()
+#h.split()
 
 while True:
     for event in pygame.event.get():
@@ -131,7 +132,7 @@ while True:
     
     for node in h.nodes:
         node.step()
-        pygame.draw.circle(screen, black, (node.x, node.y), 3)
+        gfxdraw.filled_circle(screen, node.x, node.y, 5, black)
     for node in h.nodes:
         for nb in node.calc_neighbors():
             pygame.draw.lines(screen, black, False, [
@@ -141,7 +142,7 @@ while True:
 
     current_step += 1
     if current_step >= translate_steps:
-        if h.n <= 3:
+        if h.n <= 3 and False:
             h.split()
         else:
             for node in h.nodes:
