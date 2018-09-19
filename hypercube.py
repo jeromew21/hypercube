@@ -139,8 +139,8 @@ while True:
     
     for node in h.nodes:
         node.step()
-        gfxdraw.aacircle(screen, node.x, node.y, 5, black)
-        gfxdraw.filled_circle(screen, node.x, node.y, 5, black)
+        gfxdraw.aacircle(screen, node.x, node.y, 3, black)
+        gfxdraw.filled_circle(screen, node.x, node.y, 3, black)
         label = font.render(node.string_rep, True, black)
         screen.blit(label, (node.x + 10, node.y + 10))
 
