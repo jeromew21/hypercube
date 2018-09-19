@@ -6,9 +6,9 @@ def flip(bit):
     return 1 if bit == 0 else 0
 
 class HypercubeGenerator:
-    def __init__(self, i_x=50, i_y=300):
+    def __init__(self, i_x=50, i_y=600):
         self._hash = {}
-        self.n = 1
+        self.n = 2
         
         self.nodes = [Node([0], self, i_x, i_y), Node([1], self, i_x, i_y + 250)]
         
@@ -22,12 +22,15 @@ class HypercubeGenerator:
         self.nodes = [node.pad(0) for node in self.nodes]
         dx = 1
         dy = 0
-        if self.n == 2:
+        if self.n == 3:
             dy = -0.7
             dx = 0.5
-        if self.n == 3:
+        elif self.n == 4:
             dx = 0.8
             dy = -0.4
+        elif self.n == 5:
+            dx = 0.4
+            dy = -0.3
         for node in self.nodes:
             node.set_velo(0, 0)
             self._hash[node.string_rep] = node
@@ -104,10 +107,10 @@ class Node:
 pygame.init()
 clock = pygame.time.Clock()
 
-pygame.display.set_caption("hypercube, nice")
+pygame.display.set_caption("hypercube fuckery")
 
 screen = pygame.display.set_mode(
-    (800, 600))
+    (1600, 900))
 pygame.display.update()
 
 h = HypercubeGenerator()
@@ -116,12 +119,16 @@ ticks = 0
 white = (255, 255, 255)
 black = (0, 0, 0)
 
+font = pygame.font.SysFont('monospace', 30)
+
 translate_steps = 250
 current_step = 0
 
 print(f"Num nodes: {Node.count}")
 
-#h.split()
+h.split()
+
+final_dimension = 5
 
 while True:
     for event in pygame.event.get():
@@ -132,7 +139,12 @@ while True:
     
     for node in h.nodes:
         node.step()
+        gfxdraw.aacircle(screen, node.x, node.y, 5, black)
         gfxdraw.filled_circle(screen, node.x, node.y, 5, black)
+        label = font.render(node.string_rep, True, black)
+        screen.blit(label, (node.x + 10, node.y + 10))
+
+
     for node in h.nodes:
         for nb in node.calc_neighbors():
             pygame.draw.lines(screen, black, False, [
@@ -142,7 +154,7 @@ while True:
 
     current_step += 1
     if current_step >= translate_steps:
-        if h.n <= 3 and False:
+        if h.n <= final_dimension:
             h.split()
         else:
             for node in h.nodes:
